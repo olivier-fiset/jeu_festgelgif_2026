@@ -26,45 +26,45 @@ void setup()
 
   IO_initAllInputs(MCP23017_GPIOA_REG);
   IO_initAllInputs(MCP23017_GPIOB_REG);
-  // attachInterrupt(digitalPinToInterrupt(1), courseFinieCallback, RISING);
 }
 
 void loop()
 {
   // test code:
-  // MCPWM_setSpeed(MOTOR_1, 50);
-  // MCPWM_setDirection(MOTOR_1, FORWARD);
-  // delay(3000);
+  MCPWM_setSpeed(MOTOR_1, 100);
+  MCPWM_setDirection(MOTOR_1, FORWARD);
+  delay(3000);
 
-  // MCPWM_setSpeed(MOTOR_1, 0);
-  // MCPWM_setDirection(MOTOR_1, STOP);
-  // delay(3000);
-  ////////
+  if (IO_read(MCP23017_GPIOA_REG, IOA, PIN0))
+  {
+    MCPWM_setSpeed(MOTOR_1, 0);
+    MCPWM_setDirection(MOTOR_1, STOP);
+    delay(10000);
+  }
+  //////
 
   // vrai code
-  uint32_t currentTick;
-  uint32_t lastSpeedChangeTick = 0;
-  uint8_t currentIndex = 0;
-  remplirBuffers();
-  setNewSpeeds(currentIndex);
+  // uint32_t currentTick;
+  // uint32_t lastSpeedChangeTick = 0;
+  // uint8_t currentIndex = 0;
+  // remplirBuffers();
+  // setNewSpeeds(currentIndex);
 
-  while(!courseFinie){
-    currentTick = xTaskGetTickCount();
-    if(currentTick - lastSpeedChangeTick >= INTERVALLE_PAR_VITESSE_TICKS){
-      currentIndex++;
-    }
-  }
-  while(courseFinie){
-    // read IO for button to start new race
-  }
-
-
-
+  // while(!courseFinie){
+  //   currentTick = xTaskGetTickCount();
+  //   if(currentTick - lastSpeedChangeTick >= INTERVALLE_PAR_VITESSE_TICKS){
+  //     currentIndex++;
+  //   }
+  // }
+  // while(courseFinie){
+  //   // read IO for button to start new race
+  // }
 }
 
 // put function definitions here:
 
-void setNewSpeeds(uint8_t index){
+void setNewSpeeds(uint8_t index)
+{
   MCPWM_setSpeed(MOTOR_1, vitesseBuffer[0][index]);
   MCPWM_setDirection(MOTOR_1, FORWARD);
 
@@ -78,8 +78,8 @@ void setNewSpeeds(uint8_t index){
   MCPWM_setDirection(MOTOR_4, FORWARD);
 }
 
-
-void courseFinieCallback(){
+void courseFinieCallback()
+{
   courseFinie = true;
 
   MCPWM_setSpeed(MOTOR_1, 0);
@@ -95,25 +95,30 @@ void courseFinieCallback(){
   MCPWM_setDirection(MOTOR_4, STOP);
 }
 
-void remplirBuffers() {
-    float performance[NB_CHEVAUX];
-    float somme = 0;
+void remplirBuffers()
+{
+  float performance[NB_CHEVAUX];
+  float somme = 0;
 
-    // Calculer la performance normalisée
-    for (int i = 0; i < NB_CHEVAUX; i++) {
-        performance[i] = 1.0 / odds[i]; // inverse des odds
-        somme += performance[i];
-    }
-    for (int i = 0; i < NB_CHEVAUX; i++) {
-        performance[i] /= somme; // normalisation
-    }
+  // Calculer la performance normalisée
+  for (int i = 0; i < NB_CHEVAUX; i++)
+  {
+    performance[i] = 1.0 / odds[i]; // inverse des odds
+    somme += performance[i];
+  }
+  for (int i = 0; i < NB_CHEVAUX; i++)
+  {
+    performance[i] /= somme; // normalisation
+  }
 
-    // Remplir les buffers
-    for (int i = 0; i < NB_CHEVAUX; i++) {
-        for (int j = 0; j < BUFFER_SIZE; j++) {
-            float r = random(0, 1000) / 1000.0; // 0..1 aléatoire
-            float biais = pow(r, 1.0 / (performance[i] * 10 + 0.1));
-            vitesseBuffer[i][j] = (uint8_t)(biais * 100.0); // convertir en 0..100
-        }
+  // Remplir les buffers
+  for (int i = 0; i < NB_CHEVAUX; i++)
+  {
+    for (int j = 0; j < BUFFER_SIZE; j++)
+    {
+      float r = random(0, 1000) / 1000.0; // 0..1 aléatoire
+      float biais = pow(r, 1.0 / (performance[i] * 10 + 0.1));
+      vitesseBuffer[i][j] = (uint8_t)(biais * 100.0); // convertir en 0..100
     }
+  }
 }
