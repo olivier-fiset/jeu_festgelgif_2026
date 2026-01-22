@@ -7,7 +7,11 @@
 const int NB_CHEVAUX = 4;
 const int BUFFER_SIZE = 50;
 const uint8_t odds[NB_CHEVAUX] = {2, 3, 5, 10};
+uint8_t mises[NB_CHEVAUX];
 uint8_t vitesseBuffer[NB_CHEVAUX][BUFFER_SIZE];
+MotorDirection directionBuffer[NB_CHEVAUX];
+bool courseFinieBuffer[NB_CHEVAUX];
+MotorNumber gagnant;
 
 #define INTERVALLE_PAR_VITESSE_TICKS pdMS_TO_TICKS(500)
 bool courseFinie = false;
@@ -19,6 +23,8 @@ void setNewSpeeds(uint8_t index);
 void setup()
 {
   // put your setup code here, to run once:
+  Serial.begin(115200);
+
   MCPWM_init(MOTOR_1);
   MCPWM_init(MOTOR_2);
   MCPWM_init(MOTOR_3);
@@ -30,6 +36,15 @@ void setup()
 
 void loop()
 {
+  Serial.println("\n=== ENTREZ LES MISES ===");
+  for (int i = 0; i < NB_CHEVAUX; i++)
+  {
+    Serial.println("\n Mise Cheval ");
+    Serial.println(i);
+    Serial.println(": ");
+    mises[i] = Serial.parseInt();
+  }
+
   // test code:
   MCPWM_setSpeed(MOTOR_1, 100);
   MCPWM_setDirection(MOTOR_1, FORWARD);
@@ -66,33 +81,32 @@ void loop()
 void setNewSpeeds(uint8_t index)
 {
   MCPWM_setSpeed(MOTOR_1, vitesseBuffer[0][index]);
-  MCPWM_setDirection(MOTOR_1, FORWARD);
+  MCPWM_setDirection(MOTOR_1, directionBuffer[0]);
 
   MCPWM_setSpeed(MOTOR_2, vitesseBuffer[1][index]);
-  MCPWM_setDirection(MOTOR_2, FORWARD);
+  MCPWM_setDirection(MOTOR_2, directionBuffer[1]);
 
   MCPWM_setSpeed(MOTOR_3, vitesseBuffer[2][index]);
-  MCPWM_setDirection(MOTOR_3, FORWARD);
+  MCPWM_setDirection(MOTOR_3, directionBuffer[2]);
 
   MCPWM_setSpeed(MOTOR_4, vitesseBuffer[3][index]);
-  MCPWM_setDirection(MOTOR_4, FORWARD);
+  MCPWM_setDirection(MOTOR_4, directionBuffer[3]);
 }
 
-void courseFinieCallback()
+void changeDirectionCallback(MotorNumber cheval)
 {
-  courseFinie = true;
+  directionBuffer[cheval] = REVERSE;
+}
 
-  MCPWM_setSpeed(MOTOR_1, 0);
-  MCPWM_setDirection(MOTOR_1, STOP);
+void courseFinieCallback(MotorNumber cheval)
+{
+  // if(gagnant == 0){
+  //   gagnant = cheval;
+  // }
+  courseFinieBuffer[cheval] = true;
 
-  MCPWM_setSpeed(MOTOR_2, 0);
-  MCPWM_setDirection(MOTOR_2, STOP);
-
-  MCPWM_setSpeed(MOTOR_3, 0);
-  MCPWM_setDirection(MOTOR_3, STOP);
-
-  MCPWM_setSpeed(MOTOR_4, 0);
-  MCPWM_setDirection(MOTOR_4, STOP);
+  MCPWM_setSpeed(cheval, 0);
+  MCPWM_setDirection(cheval, STOP);
 }
 
 void remplirBuffers()
