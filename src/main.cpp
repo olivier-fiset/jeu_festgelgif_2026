@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include "MCPWM.h"
-#include "IO.h"
 
 // put function declarations here:
 
@@ -30,32 +29,38 @@ void setup()
   MCPWM_init(MOTOR_3);
   MCPWM_init(MOTOR_4);
 
-  IO_initAllInputs(MCP23017_GPIOA_REG);
-  IO_initAllInputs(MCP23017_GPIOB_REG);
+  pinMode(1, INPUT);
+  pinMode(2, INPUT);
+  pinMode(4, OUTPUT);
+  pinMode(5, INPUT);
+  pinMode(6, INPUT);
+  pinMode(7, INPUT);
+  pinMode(10, INPUT);
+  pinMode(11, INPUT);
 }
 
 void loop()
 {
-  Serial.println("\n=== ENTREZ LES MISES ===");
-  for (int i = 0; i < NB_CHEVAUX; i++)
-  {
-    Serial.println("\n Mise Cheval ");
-    Serial.println(i);
-    Serial.println(": ");
-    mises[i] = Serial.parseInt();
-  }
+  // Serial.println("\n=== ENTREZ LES MISES ===");
+  // for (int i = 0; i < NB_CHEVAUX; i++)
+  // {
+  //   Serial.println("\n Mise Cheval ");
+  //   Serial.println(i);
+  //   Serial.println(": ");
+  //   mises[i] = Serial.parseInt();
+  // }
 
-  // test code:
-  MCPWM_setSpeed(MOTOR_1, 100);
-  MCPWM_setDirection(MOTOR_1, FORWARD);
-  delay(3000);
+  // // test code:
+  // MCPWM_setSpeed(MOTOR_1, 100);
+  // MCPWM_setDirection(MOTOR_1, FORWARD);
+  // delay(3000);
 
-  if (IO_read(MCP23017_GPIOA_REG, IOA, PIN0))
-  {
-    MCPWM_setSpeed(MOTOR_1, 0);
-    MCPWM_setDirection(MOTOR_1, STOP);
-    delay(10000);
-  }
+  // if (IO_read(MCP23017_GPIOA_REG, IOA, PIN0))
+  // {
+  //   MCPWM_setSpeed(MOTOR_1, 0);
+  //   MCPWM_setDirection(MOTOR_1, STOP);
+  //   delay(10000);
+  // }
   //////
 
   // vrai code
@@ -65,6 +70,14 @@ void loop()
   // remplirBuffers();
   // setNewSpeeds(currentIndex);
 
+  if (digitalRead(2))
+  {
+    digitalWrite(4, HIGH);
+  }
+  else
+  {
+    digitalWrite(4, LOW);
+  }
   // while(!courseFinie){
   //   currentTick = xTaskGetTickCount();
   //   if(currentTick - lastSpeedChangeTick >= INTERVALLE_PAR_VITESSE_TICKS){
