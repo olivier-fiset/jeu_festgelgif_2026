@@ -20,7 +20,7 @@ uint8_t vitesseBuffer[NB_CHEVAUX][BUFFER_SIZE];
 MotorDirection directionBuffer[NB_CHEVAUX] = {FORWARD, FORWARD, FORWARD, FORWARD};
 bool courseFinieBuffer[NB_CHEVAUX];
 
-#define INTERVALLE_PAR_VITESSE_TICKS pdMS_TO_TICKS(500)
+#define INTERVALLE_PAR_VITESSE_TICKS pdMS_TO_TICKS(1500)
 bool courseFinie;
 uint8_t nbCoursesFinies;
 
@@ -90,7 +90,7 @@ void loop()
     currentTick = xTaskGetTickCount();
     if (currentTick - lastSpeedChangeTick >= INTERVALLE_PAR_VITESSE_TICKS)
     {
-      currentIndex++;
+      currentIndex = (currentIndex + 1) % BUFFER_SIZE;
       setNewSpeeds(currentIndex);
       lastSpeedChangeTick = xTaskGetTickCount();
     }
