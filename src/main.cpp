@@ -14,6 +14,7 @@
 const int NB_CHEVAUX = 4;
 const int BUFFER_SIZE = 50;
 const uint8_t pinBuffer[NB_CHEVAUX][2] = {{PIN_STOP_CHEVAL_1, PIN_REVERSE_CHEVAL_1}, {PIN_STOP_CHEVAL_2, PIN_REVERSE_CHEVAL_2}, {PIN_STOP_CHEVAL_3, PIN_REVERSE_CHEVAL_3}, {PIN_STOP_CHEVAL_4, PIN_REVERSE_CHEVAL_4}};
+uint8_t vitesseMaxBuffer[NB_CHEVAUX] = {85, 100, 100, 100};
 uint8_t odds[NB_CHEVAUX] = {2, 3, 5, 10};
 uint8_t mises[NB_CHEVAUX];
 uint8_t vitesseBuffer[NB_CHEVAUX][BUFFER_SIZE];
@@ -26,6 +27,7 @@ bool courseFinie;
 uint8_t nbCoursesFinies;
 
 void remplirBuffers();
+void remplirBuffersTestVitesseMax();
 void courseFinieCallback(MotorNumber cheval);
 void changeDirectionCallback(MotorNumber cheval);
 void setNewSpeeds(uint8_t index);
@@ -61,7 +63,7 @@ void setup()
 
 void loop()
 {
-  delay(10000);
+  // delay(10000);
   Serial.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
   Serial.println("=== Nouvelle Course ===");
   Serial.println("\n=== ODDS ===");
@@ -94,6 +96,7 @@ void loop()
   ResetCourse();
   // secretSauce();
   remplirBuffers();
+  // remplirBuffersTestVitesseMax();
   setNewSpeeds(currentIndex);
 
   while (!courseFinie)
@@ -194,12 +197,16 @@ void courseFinieCallback(MotorNumber cheval)
   courseFinieBuffer[cheval] = true;
 }
 
-void secretSauce(){
-  for(uint8_t i = 0; i < NB_CHEVAUX; i++){
-    if(mises[i] >= 10 && mises[i] < 20){
+void secretSauce()
+{
+  for (uint8_t i = 0; i < NB_CHEVAUX; i++)
+  {
+    if (mises[i] >= 10 && mises[i] < 20)
+    {
       odds[i] *= 2;
     }
-    else if(mises[i] >= 20){
+    else if (mises[i] >= 20)
+    {
       odds[i] *= 4;
     }
   }
@@ -228,7 +235,27 @@ void remplirBuffers()
     {
       float r = random(0, 1000) / 1000.0; // 0..1 aléatoire
       float biais = pow(r, 1.0 / (performance[i] * 10 + 0.1));
-      vitesseBuffer[i][j] = (uint8_t)(biais * 100.0); // convertir en 0..100
+      float vmax = vitesseMaxBuffer[i]; // vitesse max du cheval
+      vitesseBuffer[i][j] = (uint8_t)(biais * vmax);
+    }
+  }
+}
+
+void remplirBuffersTestVitesseMax()
+{
+  // Remplir les buffers avec la vitesse max
+  for (int i = 0; i < NB_CHEVAUX; i++)
+  {
+    for (int j = 0; j < BUFFER_SIZE; j++)
+    {
+      if (i == 0)
+      {
+        vitesseBuffer[i][j] = 50;
+      }
+      else
+      {
+        vitesseBuffer[i][j] = 50;
+      }
     }
   }
 }
