@@ -14,13 +14,14 @@
 const int NB_CHEVAUX = 4;
 const int BUFFER_SIZE = 50;
 const uint8_t pinBuffer[NB_CHEVAUX][2] = {{PIN_STOP_CHEVAL_1, PIN_REVERSE_CHEVAL_1}, {PIN_STOP_CHEVAL_2, PIN_REVERSE_CHEVAL_2}, {PIN_STOP_CHEVAL_3, PIN_REVERSE_CHEVAL_3}, {PIN_STOP_CHEVAL_4, PIN_REVERSE_CHEVAL_4}};
-const uint8_t odds[NB_CHEVAUX] = {2, 3, 5, 10};
+uint8_t odds[NB_CHEVAUX] = {2, 3, 5, 10};
 uint8_t mises[NB_CHEVAUX];
 uint8_t vitesseBuffer[NB_CHEVAUX][BUFFER_SIZE];
 MotorDirection directionBuffer[NB_CHEVAUX] = {FORWARD, FORWARD, FORWARD, FORWARD};
 bool courseFinieBuffer[NB_CHEVAUX];
 
 #define INTERVALLE_PAR_VITESSE_TICKS pdMS_TO_TICKS(1500)
+#define INTERVALLE_IGNORE_SWITCH pdMS_TO_TICKS(1000)
 bool courseFinie;
 uint8_t nbCoursesFinies;
 
@@ -32,10 +33,13 @@ void setNewSpeeds(uint8_t index);
 void PollingReverseAndStop(uint8_t currentIndex, MotorNumber cheval);
 void ResetCourse();
 
+void secretSauce();
+
 void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  Serial.setTimeout(0xFFFFFFFF);
 
   MCPWM_init(MOTOR_1);
   MCPWM_init(MOTOR_2);
@@ -57,36 +61,50 @@ void setup()
 
 void loop()
 {
-  // Serial.println("\n=== ENTREZ LES MISES ===");
-  // for (int i = 0; i < NB_CHEVAUX; i++)
-  // {
-  //   Serial.println("\n Mise Cheval ");
-  //   Serial.println(i);
-  //   Serial.println(": ");
-  //   mises[i] = Serial.parseInt();
-  // }
+  delay(10000);
+  Serial.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+  Serial.println("=== Nouvelle Course ===");
+  Serial.println("\n=== ODDS ===");
+  Serial.println("Cheval 1 : 2.0");
+  Serial.println("Cheval 2 : 3.0");
+  Serial.println("Cheval 3 : 5.0");
+  Serial.println("Cheval 4 : 10.0");
+  Serial.println("\n\n=== ENTREZ LES MISES ===");
 
-  // // test code:
-  // MCPWM_setSpeed(MOTOR_1, 100);
-  // MCPWM_setDirection(MOTOR_1, FORWARD);
-  // delay(3000);
+  for (int i = 0; i < NB_CHEVAUX; i++)
+  {
+    Serial.print("Mise cheval ");
+    Serial.print(i + 1);
+    Serial.print(" : ");
 
-  ////
+    mises[i] = Serial.parseInt();
+
+    Serial.print(" -> Enregistré: ");
+    Serial.println(mises[i]);
+  }
+
+  Serial.print("PRESS TO START RACE");
+  Serial.parseInt();
 
   // vrai code
   uint32_t currentTick;
   uint32_t lastSpeedChangeTick = 0;
   uint8_t currentIndex = 0;
+  uint32_t raceBeginTick = xTaskGetTickCount();
   ResetCourse();
+  // secretSauce();
   remplirBuffers();
   setNewSpeeds(currentIndex);
 
   while (!courseFinie)
   {
-    PollingReverseAndStop(currentIndex, MOTOR_1);
-    PollingReverseAndStop(currentIndex, MOTOR_2);
-    PollingReverseAndStop(currentIndex, MOTOR_3);
-    PollingReverseAndStop(currentIndex, MOTOR_4);
+    if (xTaskGetTickCount() - raceBeginTick >= INTERVALLE_IGNORE_SWITCH)
+    {
+      PollingReverseAndStop(currentIndex, MOTOR_1);
+      PollingReverseAndStop(currentIndex, MOTOR_2);
+      PollingReverseAndStop(currentIndex, MOTOR_3);
+      PollingReverseAndStop(currentIndex, MOTOR_4);
+    }
     currentTick = xTaskGetTickCount();
     if (currentTick - lastSpeedChangeTick >= INTERVALLE_PAR_VITESSE_TICKS)
     {
@@ -95,6 +113,8 @@ void loop()
       lastSpeedChangeTick = xTaskGetTickCount();
     }
   }
+
+  Serial.print("\nGagnant: ");
 }
 
 // put function definitions here:
@@ -172,6 +192,17 @@ void courseFinieCallback(MotorNumber cheval)
     courseFinie = true;
   }
   courseFinieBuffer[cheval] = true;
+}
+
+void secretSauce(){
+  for(uint8_t i = 0; i < NB_CHEVAUX; i++){
+    if(mises[i] >= 10 && mises[i] < 20){
+      odds[i] *= 2;
+    }
+    else if(mises[i] >= 20){
+      odds[i] *= 4;
+    }
+  }
 }
 
 void remplirBuffers()
