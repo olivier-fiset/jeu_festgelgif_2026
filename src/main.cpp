@@ -31,11 +31,10 @@ void remplirBuffersTestVitesseMax();
 void courseFinieCallback(MotorNumber cheval);
 void changeDirectionCallback(MotorNumber cheval);
 void setNewSpeeds(uint8_t index);
-
 void PollingReverseAndStop(uint8_t currentIndex, MotorNumber cheval);
 void ResetCourse();
-
 void secretSauce();
+bool lire4Uint8();
 
 void setup()
 {
@@ -64,29 +63,35 @@ void setup()
 void loop()
 {
   // delay(10000);
-  Serial.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-  Serial.println("=== Nouvelle Course ===");
-  Serial.println("\n=== ODDS ===");
-  Serial.println("Cheval 1 : 2.0");
-  Serial.println("Cheval 2 : 3.0");
-  Serial.println("Cheval 3 : 5.0");
-  Serial.println("Cheval 4 : 10.0");
-  Serial.println("\n\n=== ENTREZ LES MISES ===");
+  // Serial.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+  // Serial.println("=== Nouvelle Course ===");
+  // Serial.println("\n=== ODDS ===");
+  // Serial.println("Cheval 1 : 2.0");
+  // Serial.println("Cheval 2 : 3.0");
+  // Serial.println("Cheval 3 : 5.0");
+  // Serial.println("Cheval 4 : 10.0");
+  // Serial.println("\n\n=== ENTREZ LES MISES ===");
 
-  for (int i = 0; i < NB_CHEVAUX; i++)
-  {
-    Serial.print("Mise cheval ");
-    Serial.print(i + 1);
-    Serial.print(" : ");
+  // for (int i = 0; i < NB_CHEVAUX; i++)
+  // {
+  //   Serial.print("Mise cheval ");
+  //   Serial.print(i + 1);
+  //   Serial.print(" : ");
 
-    mises[i] = Serial.parseInt();
+  //   mises[i] = Serial.parseInt();
 
-    Serial.print(" -> Enregistré: ");
-    Serial.println(mises[i]);
-  }
+  //   Serial.print(" -> Enregistré: ");
+  //   Serial.println(mises[i]);
+  // }
 
-  Serial.print("PRESS TO START RACE");
-  Serial.parseInt();
+  // Serial.print("PRESS TO START RACE");
+  // Serial.parseInt();
+  
+  lire4Uint8();
+  Serial.print(mises[0]);
+  Serial.print(mises[1]);
+  Serial.print(mises[2]);
+  Serial.print(mises[3]);
 
   // vrai code
   uint32_t currentTick;
@@ -117,7 +122,7 @@ void loop()
     }
   }
 
-  Serial.print("\nGagnant: ");
+  // Serial.print("\nGagnant: ");
 }
 
 // put function definitions here:
@@ -258,4 +263,33 @@ void remplirBuffersTestVitesseMax()
       }
     }
   }
+}
+
+bool lire4Uint8()
+{
+  if (!Serial.available())
+    return false;
+
+  String ligne = Serial.readStringUntil('\n');
+  ligne.trim();   // enlève espaces et \r
+
+  int v[4];
+  int count = sscanf(ligne.c_str(), "%d,%d,%d,%d",
+                     &v[0], &v[1], &v[2], &v[3]);
+
+  if (count != 4)
+  {
+    Serial.println("Format invalide ! Exemple: 10,20,30,40");
+    return false;
+  }
+
+  // Clamp + conversion uint8
+  for (int i = 0; i < 4; i++)
+  {
+    if (v[i] < 0)   v[i] = 0;
+    if (v[i] > 255) v[i] = 255;
+    mises[i] = (uint8_t)v[i];
+  }
+
+  return true;
 }
