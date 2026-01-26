@@ -10,7 +10,7 @@ import glob
 
 # --- Initialization & Serial (Kept your logic) ---
 try:
-    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+    ser = serial.Serial('COM3', 115200, timeout=1)
 except Exception as e:
     ser = None
     print(f"Serial port error: {e}")
@@ -31,7 +31,8 @@ def send_data():
     try:
         values = [entry.get() if entry.get().isdigit() and 0 <= int(entry.get()) <= 255 else "0" for entry in entries]
         message = ", ".join(values)
-        if ser: ser.write(message.encode())
+        if ser:
+            ser.write((message + "\n").encode())
         print(f"Sent: {message}")
     except Exception as e:
         print(f"Error sending data: {e}")
