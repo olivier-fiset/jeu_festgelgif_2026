@@ -22,7 +22,7 @@ MotorDirection directionBuffer[NB_CHEVAUX] = {FORWARD, FORWARD, FORWARD, FORWARD
 bool courseFinieBuffer[NB_CHEVAUX];
 
 #define INTERVALLE_PAR_VITESSE_TICKS pdMS_TO_TICKS(1500)
-#define INTERVALLE_IGNORE_SWITCH pdMS_TO_TICKS(1000)
+#define INTERVALLE_IGNORE_SWITCH pdMS_TO_TICKS(3000)
 bool courseFinie;
 uint8_t nbCoursesFinies;
 
@@ -86,8 +86,13 @@ void loop()
 
   // Serial.print("PRESS TO START RACE");
   // Serial.parseInt();
-  
-  lire4Uint8();
+
+  bool misesRecues = false;
+  while (!misesRecues)
+  {
+    misesRecues = lire4Uint8();
+    delay(10);
+  }
   Serial.print(mises[0]);
   Serial.print(mises[1]);
   Serial.print(mises[2]);
@@ -267,11 +272,9 @@ void remplirBuffersTestVitesseMax()
 
 bool lire4Uint8()
 {
-  if (!Serial.available())
-    return false;
-
   String ligne = Serial.readStringUntil('\n');
-  ligne.trim();   // enlève espaces et \r
+  Serial.println(ligne);
+  ligne.trim(); // enlève espaces et \r
 
   int v[4];
   int count = sscanf(ligne.c_str(), "%d,%d,%d,%d",
@@ -286,8 +289,10 @@ bool lire4Uint8()
   // Clamp + conversion uint8
   for (int i = 0; i < 4; i++)
   {
-    if (v[i] < 0)   v[i] = 0;
-    if (v[i] > 255) v[i] = 255;
+    if (v[i] < 0)
+      v[i] = 0;
+    if (v[i] > 255)
+      v[i] = 255;
     mises[i] = (uint8_t)v[i];
   }
 

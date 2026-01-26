@@ -6,7 +6,7 @@ import time
 
 # Initialize serial communication
 try:
-    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+    ser = serial.Serial('COM3', 115200, timeout=1)
 except Exception as e:
     ser = None
     print(f"Serial port error: {e}")
@@ -22,7 +22,7 @@ def send_data():
             values.append(value)
         message = ", ".join(values)
         if ser:
-            ser.write(message.encode())
+            ser.write((message + "\n").encode())
         print(f"Sent: {message}")
     except Exception as e:
         print(f"Error sending data: {e}")
