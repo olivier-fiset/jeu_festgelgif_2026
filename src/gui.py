@@ -10,7 +10,7 @@ import glob
 
 # --- Initialization & Serial (Kept your logic) ---
 try:
-    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+    ser = serial.Serial('COM3', 115200, timeout=1)
 except Exception as e:
     ser = None
     print(f"Serial port error: {e}")

@@ -16,8 +16,9 @@ const uint8_t limitSwitchPins[4] = {PIN_STOP_CHEVAL_1, PIN_STOP_CHEVAL_2, PIN_ST
 const int NB_CHEVAUX = 4;
 const int BUFFER_SIZE = 50;
 const uint8_t pinBuffer[NB_CHEVAUX][2] = {{PIN_STOP_CHEVAL_1, PIN_REVERSE_CHEVAL_1}, {PIN_STOP_CHEVAL_2, PIN_REVERSE_CHEVAL_2}, {PIN_STOP_CHEVAL_3, PIN_REVERSE_CHEVAL_3}, {PIN_STOP_CHEVAL_4, PIN_REVERSE_CHEVAL_4}};
-uint8_t vitesseMaxBuffer[NB_CHEVAUX] = {85, 100, 100, 100};
-uint8_t odds[NB_CHEVAUX] = {2, 3, 5, 10};
+uint8_t vitesseMaxBuffer[NB_CHEVAUX] = {90, 98, 92, 100};
+uint8_t odds[NB_CHEVAUX] = {2, 2, 2, 2};
+uint8_t basicOdds[NB_CHEVAUX] = {2, 2, 2, 2};
 uint8_t mises[NB_CHEVAUX];
 uint8_t vitesseBuffer[NB_CHEVAUX][BUFFER_SIZE];
 MotorDirection directionBuffer[NB_CHEVAUX] = {FORWARD, FORWARD, FORWARD, FORWARD};
@@ -112,7 +113,7 @@ void loop()
   uint8_t currentIndex = 0;
   uint32_t raceBeginTick = xTaskGetTickCount();
   ResetCourse();
-  // secretSauce();
+  secretSauce();
   remplirBuffers();
   // remplirBuffersTestVitesseMax();
   setNewSpeeds(currentIndex);
@@ -144,7 +145,7 @@ void ResetCourse()
 {
   courseFinie = false;
   nbCoursesFinies = 0;
-  resetGagnant();  // Ajouter ceci
+  resetGagnant(); // Ajouter ceci
 
   for (uint8_t i = 0; i < 4; i++)
   {
@@ -238,6 +239,10 @@ void secretSauce()
     {
       odds[i] *= 4;
     }
+    else
+    {
+      odds[i] = basicOdds[i];
+    }
   }
 }
 
@@ -324,7 +329,7 @@ void detecterGagnant()
   {
     return;
   }
-  
+
   for (int i = 0; i < NB_CHEVAUX; i++)
   {
     if (courseFinieBuffer[i] && !gagnantTrouve)
