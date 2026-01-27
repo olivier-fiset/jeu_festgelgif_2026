@@ -10,7 +10,7 @@ import glob
 
 # --- Initialization & Serial (Kept your logic) ---
 try:
-    ser = serial.Serial('COM3', 115200, timeout=1)
+    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
 except Exception as e:
     ser = None
     print(f"Serial port error: {e}")
@@ -24,11 +24,16 @@ NOM_CHEVAL_NOIR = "CHEVAL NOIR"
 NOM_CHEVAL_JAUNE = "CHEVAL JAUNE"    
 
 # --- GIF Player Variables ---
-gif_files = []
-current_gif_index = 0
 gif_frames = []
-current_frame_index = 0
+gif_index = 0
+current_file = None
 gif_label = None
+gif_frames_ref = []  # Add this to prevent garbage collection
+
+# Add these constants near the top of your file
+GIF_FOLDER = "include/gifs"  # Adjust path as needed
+SUPPORTED_EXTENSIONS = ('.gif', '.png', '.jpg', '.jpeg', '.bmp')
+IMAGE_DISPLAY_TIME = 3000  # 3 seconds in milliseconds
 
 # --- Functions ---
 def send_data():
@@ -92,72 +97,97 @@ def start_dropping():
     drop_image()
     root.after(1000, start_dropping)
 
-def load_gif_files():
-    """Load all GIF file paths from include/gifs folder"""
-    global gif_files
-    gif_folder = "include/gifs"
-    if os.path.exists(gif_folder):
-        gif_files = sorted(glob.glob(os.path.join(gif_folder, "*.gif")))
-        print(f"Found {len(gif_files)} GIF files: {gif_files}")
-    else:
-        print(f"GIF folder not found: {gif_folder}")
-        gif_files = []
+def get_random_media_file():
+    """Get a random file from the gif folder."""
+    if not os.path.exists(GIF_FOLDER):
+        print(f"ERROR: Folder '{GIF_FOLDER}' does not exist!")
+        return None
+    files = [f for f in os.listdir(GIF_FOLDER) 
+             if f.lower().endswith(SUPPORTED_EXTENSIONS)]
+    if not files:
+        print(f"ERROR: No supported files found in '{GIF_FOLDER}'")
+        return None
+    chosen = os.path.join(GIF_FOLDER, random.choice(files))
+    print(f"Selected media file: {chosen}")
+    return chosen
 
-def load_gif_frames(gif_path):
-    """Load all frames from a GIF file"""
-    global gif_frames
+def load_media_file(filepath):
+    """Load a GIF or image file and return frames list."""
+    global gif_frames, gif_index, gif_frames_ref
     gif_frames = []
-    try:
-        gif = Image.open(gif_path)
-        # Get original dimensions
-        original_width, original_height = gif.size
-        
-        # Target size (max dimension)
-        max_size = 400
-        
-        # Calculate new size maintaining aspect ratio
-        ratio = min(max_size / original_width, max_size / original_height)
-        new_width = int(original_width * ratio)
-        new_height = int(original_height * ratio)
-        
-        while True:
-            frame = gif.copy().resize((new_width, new_height), Image.Resampling.LANCZOS)
-            gif_frames.append(ImageTk.PhotoImage(frame))
-            gif.seek(gif.tell() + 1)
-    except EOFError:
-        pass  # End of GIF frames
-    except Exception as e:
-        print(f"Error loading GIF {gif_path}: {e}")
-
-def animate_gif():
-    """Animate the current GIF, move to next GIF when done"""
-    global current_frame_index, current_gif_index
+    gif_frames_ref = []  # Clear old references
+    gif_index = 0
     
-    if not gif_files or not gif_frames:
+    if not filepath or not os.path.exists(filepath):
+        return False
+    
+    try:
+        img = Image.open(filepath)
+        
+        if filepath.lower().endswith('.gif') and hasattr(img, 'n_frames') and img.n_frames > 1:
+            # It's an animated GIF
+            for frame_num in range(img.n_frames):
+                img.seek(frame_num)
+                frame = img.copy().convert('RGBA')
+                frame = frame.resize((300, 300), Image.Resampling.LANCZOS)
+                photo = ImageTk.PhotoImage(frame)
+                gif_frames.append(photo)
+                gif_frames_ref.append(photo)  # Keep reference
+            return True
+        else:
+            # It's a static image
+            img = img.convert('RGBA')
+            img = img.resize((300, 300), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            gif_frames.append(photo)
+            gif_frames_ref.append(photo)  # Keep reference
+            return True
+    except Exception as e:
+        print(f"Error loading {filepath}: {e}")
+        return False
+
+def start_gif_player():
+    """Start playing random media from the gif folder."""
+    load_next_media()
+
+def load_next_media():
+    """Load the next random media file."""
+    global current_file
+    current_file = get_random_media_file()
+    if current_file and load_media_file(current_file):
+        print(f"Loaded {len(gif_frames)} frames from {current_file}")
+        play_gif_frame()
+    else:
+        # Show placeholder text when no media is available
+        gif_label.configure(image='', text="No media found\nin 'gif' folder", 
+                          font=("Arial", 14), fg="gray")
+        # Retry after 5 seconds
+        root.after(5000, load_next_media)
+
+def play_gif_frame():
+    """Play GIF frames or display static image."""
+    global gif_index
+    
+    if not gif_frames:
+        root.after(1000, load_next_media)
         return
     
     # Update the label with current frame
-    gif_label.config(image=gif_frames[current_frame_index])
-    current_frame_index += 1
+    gif_label.configure(image=gif_frames[gif_index])
     
-    # Check if we've shown all frames of current GIF
-    if current_frame_index >= len(gif_frames):
-        current_frame_index = 0
-        current_gif_index = (current_gif_index + 1) % len(gif_files)
-        load_gif_frames(gif_files[current_gif_index])
-    
-    # Schedule next frame (adjust delay as needed, 100ms default)
-    root.after(100, animate_gif)
-
-def start_gif_player():
-    """Initialize and start the GIF player"""
-    global current_gif_index, current_frame_index
-    load_gif_files()
-    if gif_files:
-        current_gif_index = 0
-        current_frame_index = 0
-        load_gif_frames(gif_files[0])
-        animate_gif()
+    if len(gif_frames) == 1:
+        # Static image - display for 3 seconds then load next
+        root.after(IMAGE_DISPLAY_TIME, load_next_media)
+    else:
+        # Animated GIF - advance to next frame
+        gif_index += 1
+        if gif_index >= len(gif_frames):
+            # GIF finished, load next media
+            gif_index = 0
+            root.after(100, load_next_media)
+        else:
+            # Continue GIF animation (adjust delay as needed)
+            root.after(100, play_gif_frame)
 
 # --- GUI Setup ---
 root = tk.Tk()
