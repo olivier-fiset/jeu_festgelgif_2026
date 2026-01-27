@@ -10,14 +10,18 @@ import glob
 
 # --- Initialization & Serial (Kept your logic) ---
 try:
-    ser = serial.Serial('COM3', 115200, timeout=1)
+    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
 except Exception as e:
     ser = None
     print(f"Serial port error: {e}")
 
 DROP_X_RANGE = (40, 250)  # Adjusted range to fit the new canvas width
 BUCKET_Y_POSITION = 360   # Move bucket up
-BUCKET_X_POSITION = 20    
+BUCKET_X_POSITION = 20
+NOM_CHEVAL_BLEUF = "BENIMOUNE"
+NOM_CHEVAL_BLEUP = "GROS ZOURS SALE BIO"
+NOM_CHEVAL_NOIR = "CHEVAL NOIR"
+NOM_CHEVAL_JAUNE = "CHEVAL JAUNE"    
 
 # --- GIF Player Variables ---
 gif_files = []
@@ -43,7 +47,14 @@ def read_serial():
             try:
                 data = ser.readline().decode().strip()
                 if data.isdigit() and 1 <= int(data) <= 4:
-                    result_label.config(text=f"CHEVAL {data} A GAGNÉ!")
+                    if int(data) == 1:
+                        result_label.config(text=f"{NOM_CHEVAL_BLEUP} A GAGNÉ!")
+                    elif int(data) == 2:
+                        result_label.config(text=f"{NOM_CHEVAL_BLEUF} A GAGNÉ!")
+                    elif int(data) == 3:
+                        result_label.config(text=f"{NOM_CHEVAL_JAUNE} A GAGNÉ!")
+                    elif int(data) == 4:
+                        result_label.config(text=f"{NOM_CHEVAL_NOIR} A GAGNÉ!")
             except Exception as e:
                 print(f"Error reading data: {e}")
 
@@ -189,11 +200,12 @@ gif_label.pack(expand=True)
 input_frame = tk.Frame(main_frame, bg="#f0f0f0")
 input_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=40)
 
+noms = [NOM_CHEVAL_BLEUP, NOM_CHEVAL_BLEUF, NOM_CHEVAL_JAUNE, NOM_CHEVAL_NOIR]
 entries = []
 for i in range(4):
     f = tk.Frame(input_frame, bg="#f0f0f0")
     f.pack(pady=10)
-    tk.Label(f, text=f"Mise {i+1}:", font=("Arial", 30), bg="#f0f0f0").pack(side=tk.LEFT)
+    tk.Label(f, text=f"Mise {noms[i]}:", font=("Arial", 10), bg="#f0f0f0").pack(side=tk.LEFT)
     e = tk.Entry(f, width=10, font=("Arial", 30))
     e.pack(side=tk.LEFT, padx=10)
     entries.append(e)

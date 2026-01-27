@@ -11,6 +11,8 @@
 #define PIN_STOP_CHEVAL_4 5
 #define PIN_REVERSE_CHEVAL_4 4
 
+const uint8_t limitSwitchPins[4] = {PIN_STOP_CHEVAL_1, PIN_STOP_CHEVAL_2, PIN_STOP_CHEVAL_3, PIN_STOP_CHEVAL_4};
+
 const int NB_CHEVAUX = 4;
 const int BUFFER_SIZE = 50;
 const uint8_t pinBuffer[NB_CHEVAUX][2] = {{PIN_STOP_CHEVAL_1, PIN_REVERSE_CHEVAL_1}, {PIN_STOP_CHEVAL_2, PIN_REVERSE_CHEVAL_2}, {PIN_STOP_CHEVAL_3, PIN_REVERSE_CHEVAL_3}, {PIN_STOP_CHEVAL_4, PIN_REVERSE_CHEVAL_4}};
@@ -26,6 +28,10 @@ bool courseFinieBuffer[NB_CHEVAUX];
 bool courseFinie;
 uint8_t nbCoursesFinies;
 
+// Variable globale au lieu de static locale
+bool gagnantTrouve = false;
+uint8_t gagnantIndex = 0;
+
 void remplirBuffers();
 void remplirBuffersTestVitesseMax();
 void courseFinieCallback(MotorNumber cheval);
@@ -35,6 +41,8 @@ void PollingReverseAndStop(uint8_t currentIndex, MotorNumber cheval);
 void ResetCourse();
 void secretSauce();
 bool lire4Uint8();
+void detecterGagnant();
+void resetGagnant();
 
 void setup()
 {
@@ -127,6 +135,7 @@ void loop()
     }
   }
 
+  detecterGagnant();
   // Serial.print("\nGagnant: ");
 }
 
@@ -135,6 +144,7 @@ void ResetCourse()
 {
   courseFinie = false;
   nbCoursesFinies = 0;
+  resetGagnant();  // Ajouter ceci
 
   for (uint8_t i = 0; i < 4; i++)
   {
@@ -198,6 +208,15 @@ void courseFinieCallback(MotorNumber cheval)
 {
   MCPWM_setSpeed(cheval, 0);
   MCPWM_setDirection(cheval, STOP);
+
+  // Détecter le gagnant (le premier à finir)
+  if (!gagnantTrouve)
+  {
+    gagnantTrouve = true;
+    gagnantIndex = cheval;
+    Serial.print(cheval + 1);
+    Serial.println("");
+  }
 
   nbCoursesFinies++;
   if (nbCoursesFinies == 4)
@@ -297,4 +316,30 @@ bool lire4Uint8()
   }
 
   return true;
+}
+
+void detecterGagnant()
+{
+  if (gagnantTrouve)
+  {
+    return;
+  }
+  
+  for (int i = 0; i < NB_CHEVAUX; i++)
+  {
+    if (courseFinieBuffer[i] && !gagnantTrouve)
+    {
+      gagnantTrouve = true;
+      gagnantIndex = i;
+      Serial.print(i + 1);
+      Serial.println("");
+      return;
+    }
+  }
+}
+
+void resetGagnant()
+{
+  gagnantTrouve = false;
+  gagnantIndex = 0;
 }
